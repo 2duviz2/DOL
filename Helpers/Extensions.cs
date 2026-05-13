@@ -1,6 +1,7 @@
-﻿namespace DOL.Helpers;
-
+﻿using DOL.UI;
+using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 
 public static class Extensions
 {
@@ -18,6 +19,34 @@ public static class Extensions
     extension(GameObject obj)
     {
         /// <summary> Gets the object's RectTransform </summary>
-        public RectTransform rectTransform() => obj.GetComponent<RectTransform>();
+        public RectTransform rectTransform => obj.GetComponent<RectTransform>();
+    }
+
+    extension(Canvas canvas)
+    {
+        public TMP_Text Text
+        (
+            Vector2 position,
+            Vector2 sizeDelta,
+            string defaultText = "Ella jura",
+            float size = 20,
+            TextAlignmentOptions alignment = TextAlignmentOptions.TopLeft,
+            Color? color = null,
+            Vector2? anchorMin = null,
+            Vector2? anchorMax = null,
+            Vector2? pivot = null
+        ) => Builder.Text(canvas.gameObject, position, sizeDelta, defaultText, size, alignment, color, anchorMin, anchorMax, pivot);
+
+        public Button Button
+        (
+            Vector2 position,
+            Vector2 sizeDelta,
+            string defaultText = "Ella jura",
+            float size = 20,
+            TextAlignmentOptions alignment = TextAlignmentOptions.TopLeft,
+            Vector2? anchorMin = null,
+            Vector2? anchorMax = null,
+            Vector2? pivot = null
+        ) => Builder.Button(canvas.gameObject, position, sizeDelta, defaultText, size, alignment, anchorMin, anchorMax, pivot);
     }
 }

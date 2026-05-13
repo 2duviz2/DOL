@@ -44,6 +44,9 @@
             <Private>false</Private>
             <CopyLocal>false</CopyLocal>
 		</Reference>
+		<Reference Include="ALIOLI">
+			<HintPath>$(ManagedPath)\ALINE.dll</HintPath>
+		</Reference>
 		<Reference Include="Plog meow">
 			<HintPath>$(ManagedPath)\plog.dll</HintPath>
 		</Reference>
@@ -66,10 +69,6 @@
       <Publicize Include="Assembly-CSharp" />
 	</ItemGroup>
 
-	<ItemGroup>
-	  <Folder Include="Classes\" />
-	</ItemGroup>
-
 	<Target Name="PreBuild" BeforeTargets="Build">
 		<!-- Log an error if the ULTRAKILLPath isn't set as it's nessecary for building the mod. -->
 		<Error Condition="!Exists($(ULTRAKILLPath))" Text="ULTRAKILLPath not set, open the Paths.props file and set ULTRAKILLPath to where ever your ULTRAKILL install is located on your computer." />
@@ -82,5 +81,7 @@
 		<!-- Copy the DLL if the PluginPath does exist. -->
 		<Message Condition="Exists($(PluginPath))" Text="Copying DLL to: $(CopyPath)..." Importance="high" />
 		<Copy Condition="Exists($(PluginPath))" SourceFiles="$(TargetPath)" DestinationFolder="$(CopyPath)" OverwriteReadOnlyFiles="true" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="E:\SteamLibrary\steamapps\common\White Knuckle GOLDBERG 2\BepInEx\plugins\DOL" OverwriteReadOnlyFiles="true" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="E:\SteamLibrary\steamapps\common\White Knuckle GOLDBERG 1\BepInEx\plugins\DOL" OverwriteReadOnlyFiles="true" />
 	</Target>
 </Project>

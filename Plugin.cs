@@ -7,6 +7,9 @@ using DOL.Helpers;
 using UnityEngine;
 using DOL.UI;
 using TMPro;
+using UnityEngine.SceneManagement;
+using DOL.Classes;
+using Steamworks;
 
 [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
 public class Plugin : BaseUnityPlugin
@@ -28,9 +31,19 @@ public class Plugin : BaseUnityPlugin
 
     public void Start()
     {
-        Canvas c = Builder.Canvas();
-        DontDestroyOnLoad(c);
-        TMP_Text t = Builder.Text(c.gameObject, new Vector2(0, 0), new Vector2(200, 200), "Ella jura");
+        try { SteamClient.Init(3195790); }
+        catch { }
+
+        Client.CreateClient();
+        SceneManager.sceneLoaded += SceneLoaded;
+    }
+
+    void SceneLoaded(Scene scene, LoadSceneMode __)
+    {
+        if (scene.name == "Main-Menu")
+        {
+            NetworkManager.LeaveLobby();
+        }
     }
 
     public static T Ass<T>(string path) => AssHelper.Ass<T>(path);
@@ -43,5 +56,5 @@ public class PluginInfo
 {
     public const string GUID = "duviz.DOL";
     public const string Name = "DOL";
-    public const string Version = "0.1.0";
+    public const string Version = "0.0.1";
 }
