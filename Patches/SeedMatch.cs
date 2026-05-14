@@ -10,6 +10,7 @@ public static class UT_RadiusSpawnerPatch
     [HarmonyPatch(typeof(UT_RadiusSpawner), nameof(UT_RadiusSpawner.Start))]
     public static void Start(UT_RadiusSpawner __instance)
     {
+        if (NetworkManager.CurrentState == GameState.Offline) return;
         __instance.seed = Client.NetSeed;
     }
 }
@@ -21,6 +22,7 @@ public static class UT_TriggerSpawnerPatch
     [HarmonyPatch(typeof(UT_TriggerSpawner), nameof(UT_TriggerSpawner.Start))]
     public static void Start(UT_TriggerSpawner __instance)
     {
+        if (NetworkManager.CurrentState == GameState.Offline) return;
         __instance.seed = Client.NetSeed;
     }
 }
@@ -32,17 +34,41 @@ public static class UT_MeshFaceSpawnerPatch
     [HarmonyPatch(typeof(UT_MeshFaceSpawner), nameof(UT_MeshFaceSpawner.Start))]
     public static void Start(UT_MeshFaceSpawner __instance)
     {
+        if (NetworkManager.CurrentState == GameState.Offline) return;
         __instance.seed = Client.NetSeed;
     }
 }
 
-[HarmonyPatch(typeof(M_Level))]
-public static class M_LevelPatch
+[HarmonyPatch(typeof(M_Level), nameof(M_Level.Awake))]
+public class M_LevelAwakePatch
 {
-    [HarmonyPrefix]
-    [HarmonyPatch(typeof(M_Level), nameof(M_Level.SetFlipped))]
-    public static bool SetFlipped(M_Level __instance)
+    public static void Prefix(M_Level __instance)
     {
+        if (NetworkManager.CurrentState == GameState.Offline) return;
+        __instance.canFlip = false;
+    }
+}
+
+[HarmonyPatch(typeof(WorldLoader), nameof(WorldLoader.IncrementSeed))]
+public class IncrementSeedPatch
+{
+    public static bool Prefix()
+    {
+        if (NetworkManager.CurrentState == GameState.Offline) return true;
         return false;
+    }
+}
+
+[HarmonyPatch(typeof(CL_ProgressionManager), nameof(CL_ProgressionManager.HasProgressionUnlock))]
+public class HasProgressionUnlockPatch
+{
+    public static bool Prefix(ref bool __result)
+    {
+        if (NetworkManager.CurrentState != GameState.Offline)
+        {
+            __result = true;
+            return false;
+        }
+        return true;
     }
 }

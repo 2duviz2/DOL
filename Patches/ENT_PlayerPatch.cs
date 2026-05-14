@@ -10,6 +10,7 @@ public static class ENT_PlayerPatch
     [HarmonyPatch(typeof(ENT_Player), nameof(ENT_Player.Start))]
     public static void Start(ENT_Player __instance)
     {
+        NetworkManager.LocalPlayer = __instance;
         UIManager.CreateUI();
     }
 }

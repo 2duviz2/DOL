@@ -78,7 +78,7 @@ public static class NetworkManager
 
     public static void JoinLobby(Lobby TargetLobby)
     {
-        Client.DebugText.text = "Joining canceled";
+        Client.DebugText.text = "Joining cancelled";
 
         if (busy || CurrentState != GameState.Offline) return;
 
@@ -114,6 +114,34 @@ public static class NetworkManager
         Lobby?.Leave();
         Lobby = null;
         CurrentState = GameState.Offline;
+    }
+
+    public static void HandlePacket(Lobby lobby, Friend user, string message)
+    {
+        if (CurrentState == GameState.Offline) return;
+        if (lobby.Id != Lobby?.Id) return;
+        //if (user.Id == SteamID) return;
+        if (message == null) return;
+
+        Client.AddSufix($"P {user.Name}:{message}");
+
+        NetworkEntity.SendGlobalPacket(new Packet
+        {
+            user = user.Id,
+            message = message,
+        });
+    }
+
+    public static void SendPacket(params object[] data)
+    {
+        if (CurrentState == GameState.Offline) return;
+        if (Lobby == null) return;
+
+        var args = string.Join(":", data);
+
+        Client.AddSufix($"S {args}");
+
+        Lobby.Value.SendChatString(args);
     }
 }
 
