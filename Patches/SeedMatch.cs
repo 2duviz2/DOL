@@ -42,7 +42,9 @@ public static class UT_MeshFaceSpawnerPatch
 [HarmonyPatch(typeof(M_Level), nameof(M_Level.Awake))]
 public class M_LevelAwakePatch
 {
-    public static void Prefix(M_Level __instance)
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(M_Level), nameof(M_Level.Awake))]
+    public static void Postfix(M_Level __instance)
     {
         if (NetworkManager.CurrentState == GameState.Offline) return;
         __instance.canFlip = false;
@@ -52,6 +54,8 @@ public class M_LevelAwakePatch
 [HarmonyPatch(typeof(WorldLoader), nameof(WorldLoader.IncrementSeed))]
 public class IncrementSeedPatch
 {
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(WorldLoader), nameof(WorldLoader.IncrementSeed))]
     public static bool Prefix()
     {
         if (NetworkManager.CurrentState == GameState.Offline) return true;
@@ -62,6 +66,8 @@ public class IncrementSeedPatch
 [HarmonyPatch(typeof(CL_ProgressionManager), nameof(CL_ProgressionManager.HasProgressionUnlock))]
 public class HasProgressionUnlockPatch
 {
+    [HarmonyPrefix]
+    [HarmonyPatch(typeof(CL_ProgressionManager), nameof(CL_ProgressionManager.HasProgressionUnlock))]
     public static bool Prefix(ref bool __result)
     {
         if (NetworkManager.CurrentState != GameState.Offline)

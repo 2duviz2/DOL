@@ -17,7 +17,7 @@ public class Client : NetworkEntity
 
     static string sufix = "\n";
 
-    public const float interval = 1f/20f;
+    public const float interval = 1f/15f;
     float timer = 10000f;
 
     public static void CreateClient()
@@ -92,7 +92,9 @@ public class Client : NetworkEntity
 
     public override void GetPacket(Packet packet)
     {
-        if (packet.user == NetworkManager.SteamID) return;
+        GetLocalPacket(packet);
+
+        if (packet.user == NetworkManager.SteamID) { return; }
 
         if (packet.type == "playerPos")
         {
@@ -134,6 +136,31 @@ public class Client : NetworkEntity
             string id = packet.data[10];
 
             RebarController.SpawnItemShoot(position, direction, normalized, id);
+        }
+    }
+
+    public void GetLocalPacket(Packet packet)
+    {
+        if (packet.type == "itemPiton")
+        {
+            AddSufix("Piton packet!");
+
+            float x = float.Parse(packet.data[1]);
+            float y = float.Parse(packet.data[2]);
+            float z = float.Parse(packet.data[3]);
+            Vector3 position = new Vector3(x, y, z);
+
+            x = float.Parse(packet.data[4]);
+            y = float.Parse(packet.data[5]);
+            z = float.Parse(packet.data[6]);
+            Vector3 direction = new Vector3(x, y, z);
+
+            var buff = float.Parse(packet.data[7]);
+            string id = packet.data[8];
+
+            AddSufix($"id {id} pos {position} dir {direction} buff {buff}");
+
+            PitonController.SpawnItemPiton(position, direction, buff, id);
         }
     }
 

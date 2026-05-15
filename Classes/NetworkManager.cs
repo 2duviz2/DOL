@@ -123,13 +123,20 @@ public static class NetworkManager
         //if (user.Id == SteamID) return;
         if (message == null) return;
 
-        Client.AddSufix($"P {user.Name}:{message}");
+        //Client.AddSufix($"P {user.Name}:{message}");
 
-        NetworkEntity.SendGlobalPacket(new Packet
+        var p = new Packet
         {
             user = user.Id,
             message = message,
-        });
+        };
+
+        if (p.type != "playerPos")
+        {
+            Client.AddSufix($"{p.message}");
+        }
+
+        NetworkEntity.SendGlobalPacket(p);
     }
 
     public static void SendPacket(params object[] data)
@@ -139,7 +146,7 @@ public static class NetworkManager
 
         var args = string.Join(":", data);
 
-        Client.AddSufix($"S {args}");
+        //Client.AddSufix($"S {args}");
 
         Lobby.Value.SendChatString(args);
     }
