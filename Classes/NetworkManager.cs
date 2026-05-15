@@ -2,6 +2,7 @@
 
 using Steamworks;
 using Steamworks.Data;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class NetworkManager
@@ -60,6 +61,8 @@ public static class NetworkManager
             Lobby?.SetData("seed", "0");
 
             CurrentState = GameState.Host;
+
+            SteamNetworkingSockets.CreateRelaySocket(6967, new Server());
         });
     }
 
