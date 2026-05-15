@@ -1,4 +1,6 @@
-﻿namespace DOL.Classes;
+﻿global using static DOL.Classes.Client;
+
+namespace DOL.Classes;
 
 using DOL.UI;
 using Steamworks;
@@ -65,14 +67,17 @@ public class Client : NetworkEntity
 
         if (NetworkManager.IsClient)
         {
-            var lobbySeed = NetworkManager.Lobby.Value.GetData("seed");
-            if (NetworkManager.Lobby.HasValue)
+            if (WorldLoader.instance != null)
             {
-                if (int.TryParse(lobbySeed, out var newSeed) && newSeed != NetSeed && WorldLoader.instance.seed != newSeed)
+                var lobbySeed = NetworkManager.Lobby.Value.GetData("seed");
+                if (NetworkManager.Lobby.HasValue)
                 {
-                    NetSeed = newSeed;
-                    WorldLoader.instance.seed = newSeed;
-                    CL_GameManager.ChangeState("restart");
+                    if (int.TryParse(lobbySeed, out var newSeed) && newSeed != NetSeed && WorldLoader.instance.seed != newSeed)
+                    {
+                        NetSeed = newSeed;
+                        WorldLoader.instance.seed = newSeed;
+                        CL_GameManager.ChangeState("restart");
+                    }
                 }
             }
         }
@@ -94,18 +99,60 @@ public class Client : NetworkEntity
             float x = float.Parse(packet.data[1]);
             float y = float.Parse(packet.data[2]);
             float z = float.Parse(packet.data[3]);
-            Vector3 pos = new Vector3(x, y, z);
-            AddSufix($"{packet.user}: {pos}");
-            PlayerGhost.UpdateGhost(packet.user, pos);
+            Vector3 bodyPos = new Vector3(x, y, z);
+
+            x = float.Parse(packet.data[4]);
+            y = float.Parse(packet.data[5]);
+            z = float.Parse(packet.data[6]);
+            Vector3 lhPos = new Vector3(x, y, z);
+
+            x = float.Parse(packet.data[7]);
+            y = float.Parse(packet.data[8]);
+            z = float.Parse(packet.data[9]);
+            Vector3 rhPos = new Vector3(x, y, z);
+
+            PlayerGhost.UpdateGhost(packet.user, bodyPos, lhPos, rhPos);
+        }
+
+        if (packet.type == "itemShoot")
+        {
+            float x = float.Parse(packet.data[1]);
+            float y = float.Parse(packet.data[2]);
+            float z = float.Parse(packet.data[3]);
+            Vector3 position = new Vector3(x, y, z);
+
+            x = float.Parse(packet.data[4]);
+            y = float.Parse(packet.data[5]);
+            z = float.Parse(packet.data[6]);
+            Vector3 direction = new Vector3(x, y, z);
+
+            x = float.Parse(packet.data[7]);
+            y = float.Parse(packet.data[8]);
+            z = float.Parse(packet.data[9]);
+            Vector3 normalized = new Vector3(x, y, z);
+
+            string id = packet.data[10];
+
+            RebarController.SpawnItemShoot(position, direction, normalized, id);
         }
     }
 
     public void Sync()
     {
-        Vector3 pos = NetworkManager.LocalPlayer.transform.position;
+        Vector3 bodyPos = NetworkManager.LocalPlayer.transform.position;
+        var lh = NetworkManager.LocalPlayer.hands[0];
+        var rh = NetworkManager.LocalPlayer.hands[1];
+        Vector3 leftHandPos = lh.GetHoldWorldPosition();
+        Vector3 rightHandPos = rh.GetHoldWorldPosition();
+        if (lh.GetHandItem() != null)
+            leftHandPos = lh.GetHandItem().transform.position;
+        if (rh.GetHandItem() != null)
+            rightHandPos = rh.GetHandItem().transform.position;
         float m = 100;
-        pos = new Vector3((int)(pos.x * m) / m, (int)(pos.y * m) / m, (int)(pos.z * m) / m);
-        NetworkManager.SendPacket("playerPos", pos.x, pos.y, pos.z);
+        bodyPos = SnapVector(bodyPos, m);
+        leftHandPos = SnapVector(leftHandPos, m);
+        rightHandPos = SnapVector(rightHandPos, m);
+        NetworkManager.SendPacket("playerPos", bodyPos.x, bodyPos.y, bodyPos.z, leftHandPos.x, leftHandPos.y, leftHandPos.z, rightHandPos.x, rightHandPos.y, rightHandPos.z);
     }
 
     public void UpdateText(string prefix)
@@ -127,12 +174,17 @@ public class Client : NetworkEntity
 
     public static void AddSufix(string text)
     {
-        Plugin.LogInfo(text);
+        //Plugin.LogInfo(text);
         sufix = text + "\n" + sufix;
         var split = sufix.Split('\n');
         if (split.Length > 5)
         {
             sufix = string.Join("\n", split, 0, 5);
         }
+    }
+
+    public static Vector3 SnapVector(Vector3 pos, float m)
+    {
+        return new Vector3((int)(pos.x * m) / m, (int)(pos.y * m) / m, (int)(pos.z * m) / m);
     }
 }
