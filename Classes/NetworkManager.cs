@@ -54,21 +54,20 @@ public static class NetworkManager
 
     public static async void CreateLobbyAsync()
     {
-        await SteamMatchmaking.CreateLobbyAsync(16).ContinueWith(t =>
-        {
-            busy = false;
-            Lobby lobby = (Lobby = t.Result).Value;
+        Lobby lobby = (Lobby = await SteamMatchmaking.CreateLobbyAsync(16)).Value;
+        busy = false;
 
-            lobby.SetJoinable(true);
-            lobby.SetFriendsOnly();
-            lobby.SetData("version", PluginInfo.Version);
-            lobby.SetData("client", PluginInfo.Name);
-            lobby.SetData("seed", "0");
+        lobby.SetJoinable(true);
+        lobby.SetFriendsOnly();
+        lobby.SetData("version", PluginInfo.Version);
+        lobby.SetData("client", PluginInfo.Name);
+        lobby.SetData("seed", "0");
 
-            CurrentState = GameState.Host;
+        CurrentState = GameState.Host;
 
-            server.Open();
-        });
+        Player.AddSufix("connected to steam lobby");
+
+        server.Open();
     }
 
     public static void JoinCopiedLobby()
@@ -99,24 +98,22 @@ public static class NetworkManager
 
     public static async void JoinLobbyAsync(Lobby TargetLobby)
     {
-        await TargetLobby.Join().ContinueWith((t) =>
+        RoomEnter result = await TargetLobby.Join();
+        if (result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
         {
-            if (t.IsCompletedSuccessfully && t.Result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
-            {
-                Player.DebugText.text = $"Join successful ({t.Result}/{t.IsCompletedSuccessfully})";
-                busy = false;
-                Lobby = TargetLobby;
-                CurrentState = GameState.Client;
+            Player.DebugText.text = $"Join successful ({result})";
+            busy = false;
+            Lobby = TargetLobby;
+            CurrentState = GameState.Client;
 
-                client.Connect(Lobby.Value.Owner.Id);
-            }
-            else
-            {
-                Player.DebugText.text = $"Join error ({t.Result}/{t.IsCompletedSuccessfully})";
-                CurrentState = GameState.Offline;
-                busy = false;
-            }
-        });
+            client.Connect(Lobby.Value.Owner.Id);
+        }
+        else
+        {
+            Player.DebugText.text = $"Join error ({result})";
+            CurrentState = GameState.Offline;
+            busy = false;
+        }
     }
 
     public static void LeaveLobby()
