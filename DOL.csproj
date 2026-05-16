@@ -1,5 +1,5 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-	<Import Project="Paths.props" />
+	<Import Project="paths.props" />
 	
 	<PropertyGroup>
 		<AssemblyName>DOL</AssemblyName>
@@ -33,12 +33,6 @@
       </PackageReference>
 
 		<!-- Assemblies via Managed -->
-		<Reference Include="BepInEx">
-			<HintPath>$(CorePath)\BepInEx.dll</HintPath>
-		</Reference>
-		<Reference Include="Harmony">
-			<HintPath>$(CorePath)\0Harmony.dll</HintPath>
-		</Reference>
 		<Reference Include="Assembly-CSharp :3">
 			<HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath>
             <Private>false</Private>
@@ -70,18 +64,23 @@
 	</ItemGroup>
 
 	<Target Name="PreBuild" BeforeTargets="Build">
-		<!-- Log an error if the ULTRAKILLPath isn't set as it's nessecary for building the mod. -->
-		<Error Condition="!Exists($(ULTRAKILLPath))" Text="ULTRAKILLPath not set, open the Paths.props file and set ULTRAKILLPath to where ever your ULTRAKILL install is located on your computer." />
+		<!-- Log an error if the WKPath isn't set as it's nessecary for building the mod. -->
+		<Error Condition="!Exists($(WKPath))" Text="WKPath not set, open the paths.props file and set WKPath to where ever your White Knuckle install is located on your computer." />
 	</Target>
 	
 	<Target Name="PostBuild" AfterTargets="Build">
 		<!-- Log a Warning if the PluginPath doesn't exist as it's used for knowing where to copy the DLL. -->
-		<Warning Condition="!Exists($(PluginPath))" Text="PluginPath not set, open the Paths.props file and set it to where your BepInEx plugins folder is." />
+		<Warning Condition="!Exists('$(PluginPath)\..')" Text="PluginPath not set, open the Paths.props file and set it to where your BepInEx plugins folder is." />
 
-		<!-- Copy the DLL if the PluginPath does exist. -->
-		<Message Condition="Exists($(PluginPath))" Text="Copying DLL to: $(CopyPath)..." Importance="high" />
-		<Copy Condition="Exists($(PluginPath))" SourceFiles="$(TargetPath)" DestinationFolder="$(CopyPath)" OverwriteReadOnlyFiles="true" />
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="E:\SteamLibrary\steamapps\common\White Knuckle GOLDBERG 2\BepInEx\plugins\DOL" OverwriteReadOnlyFiles="true" />
-		<Copy SourceFiles="$(TargetPath)" DestinationFolder="E:\SteamLibrary\steamapps\common\White Knuckle GOLDBERG 1\BepInEx\plugins\DOL" OverwriteReadOnlyFiles="true" />
-	</Target>
+		<!-- Copy the DLL if the PluginPath's parent does exist. -->
+		<Message Condition="Exists('$(PluginPath)\..')" Text="Copying DLL to: $(CopyPath)..." Importance="high" />
+		<Copy Condition="Exists('$(PluginPath)\..')" SourceFiles="$(TargetPath)" DestinationFolder="$(CopyPath)" OverwriteReadOnlyFiles="true" />
+
+        <!-- Copy the DLL to all the ExtraDestDirs, and if their parents exist. -->
+        <Message Condition="'@(ExtraDestDirs-&gt;Count())' != '0' and Exists('%(ExtraDestDirs.Identity)\..')" Text="Copying DLL to %(ExtraDestDirs.Identity)..." Importance="high" />
+        <Copy Condition="'@(ExtraDestDirs-&gt;Count())' != '0' and Exists('%(ExtraDestDirs.Identity)\..')" SourceFiles="$(TargetPath)" DestinationFolder="%(ExtraDestDirs.Identity)" OverwriteReadOnlyFiles="true" />
+
+        <!-- Auto start the game if this user wants that :P -->
+        <Exec Condition="$(ShouldAutoStartUp)" Command="&quot;$(WKPath)\White Knuckle.exe&quot;" ContinueOnError="true" IgnoreExitCode="true" />
+    </Target>
 </Project>
