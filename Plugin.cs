@@ -44,9 +44,9 @@ public class Plugin : BaseUnityPlugin
         if (NetworkManager.CurrentState != GameState.Offline)
         {
             if (NetworkManager.CurrentState == GameState.Host)
-                NetworkManager.server.manager.Receive();
+                NetworkManager.server.manager?.Receive();
             else
-                NetworkManager.client.manager.Receive();
+                NetworkManager.client.manager?.Receive();
         }
     }
 
