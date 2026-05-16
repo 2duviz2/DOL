@@ -1,4 +1,4 @@
-﻿global using static DOL.Classes.Client;
+﻿global using static DOL.Classes.Player;
 
 namespace DOL.Classes;
 
@@ -7,9 +7,9 @@ using Steamworks;
 using TMPro;
 using UnityEngine;
 
-public class Client : NetworkEntity
+public class Player : NetworkEntity
 {
-    public static Client instance;
+    public static Player instance;
 
     public static TMP_Text DebugText;
 
@@ -20,9 +20,9 @@ public class Client : NetworkEntity
     public const float interval = 1f/15f;
     float timer = 10000f;
 
-    public static void CreateClient()
+    public static void CreatePlayer()
     {
-        instance = new GameObject().AddComponent<Client>();
+        instance = new GameObject().AddComponent<Player>();
         DontDestroyOnLoad(instance);
 
         var canvas = Builder.Canvas();
@@ -30,11 +30,6 @@ public class Client : NetworkEntity
         DebugText = canvas.Text(Vector2.zero, new Vector2(1000, 500), "hAI.", 20, TextAlignmentOptions.TopLeft, Color.white, Vector2.one, Vector2.one, Vector2.one);
 
         SteamFriends.OnGameLobbyJoinRequested += (lobby, _) => NetworkManager.JoinLobby(lobby);
-
-        SteamMatchmaking.OnChatMessage += (lobby, user, message) =>
-        {
-            NetworkManager.HandlePacket(lobby, user, message);
-        };
 
         instance.TakeOwnership();
     }
@@ -92,10 +87,6 @@ public class Client : NetworkEntity
 
     public override void GetPacket(Packet packet)
     {
-        GetLocalPacket(packet);
-
-        if (packet.user == NetworkManager.SteamID) { return; }
-
         if (packet.type == "playerPos")
         {
             float x = float.Parse(packet.data[1]);
@@ -137,10 +128,7 @@ public class Client : NetworkEntity
 
             RebarController.SpawnItemShoot(position, direction, normalized, id);
         }
-    }
 
-    public void GetLocalPacket(Packet packet)
-    {
         if (packet.type == "itemPiton")
         {
             AddSufix("Piton packet!");
@@ -201,7 +189,7 @@ public class Client : NetworkEntity
 
     public static void AddSufix(string text)
     {
-        //Plugin.LogInfo(text);
+        Plugin.LogInfo(text);
         sufix = text + "\n" + sufix;
         var split = sufix.Split('\n');
         if (split.Length > 5)

@@ -28,7 +28,7 @@ public struct Vector3Lerp
         TargetValue = value;
 
         // packets are only sent at 20hz(every 0.05 seconds) so the duration cannot be lower than that
-        Duration = Mathf.Max(Time.realtimeSinceStartup - StartTime, Client.interval);
+        Duration = Mathf.Max(Time.realtimeSinceStartup - StartTime, Player.interval);
         StartTime = Time.realtimeSinceStartup;
     }
 }

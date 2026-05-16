@@ -1,11 +1,17 @@
 ﻿namespace DOL.Classes;
 
+using DOL.Classes.Endpoints;
 using Steamworks;
 using Steamworks.Data;
+using System.Collections.Generic;
 using UnityEngine;
 
 public static class NetworkManager
 {
+    public static List<Connection> connections = [];
+    public static Server server = new();
+    public static Client client = new();
+
     public static GameState CurrentState = GameState.Offline;
 
     public static bool busy;
@@ -23,7 +29,7 @@ public static class NetworkManager
         }
     }
 
-    public static string? _steamName;
+    public static string _steamName;
     public static string SteamName
     {
         get
@@ -51,25 +57,27 @@ public static class NetworkManager
         await SteamMatchmaking.CreateLobbyAsync(16).ContinueWith(t =>
         {
             busy = false;
-            Lobby = t.Result;
+            Lobby lobby = (Lobby = t.Result).Value;
 
-            Lobby?.SetJoinable(true);
-            Lobby?.SetFriendsOnly();
-            Lobby?.SetData("version", PluginInfo.Version);
-            Lobby?.SetData("client", PluginInfo.Name);
-            Lobby?.SetData("seed", "0");
+            lobby.SetJoinable(true);
+            lobby.SetFriendsOnly();
+            lobby.SetData("version", PluginInfo.Version);
+            lobby.SetData("client", PluginInfo.Name);
+            lobby.SetData("seed", "0");
 
             CurrentState = GameState.Host;
+
+            server.Open();
         });
     }
 
     public static void JoinCopiedLobby()
     {
-        Client.DebugText.text = "Joining canceled";
+        Player.DebugText.text = "Joining canceled";
         if (busy || CurrentState != GameState.Offline) return;
         if (!ulong.TryParse(GUIUtility.systemCopyBuffer, out var lobbyID))
         {
-            Client.DebugText.text = "Invalid lobby code";
+            Player.DebugText.text = "Invalid lobby code";
             return;
         }
         var lobby = new Lobby(lobbyID);
@@ -78,11 +86,11 @@ public static class NetworkManager
 
     public static void JoinLobby(Lobby TargetLobby)
     {
-        Client.DebugText.text = "Joining cancelled";
+        Player.DebugText.text = "Joining cancelled";
 
         if (busy || CurrentState != GameState.Offline) return;
 
-        Client.DebugText.text = "Joining...";
+        Player.DebugText.text = "Joining...";
 
         busy = true;
         
@@ -95,14 +103,16 @@ public static class NetworkManager
         {
             if (t.IsCompletedSuccessfully && t.Result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
             {
-                Client.DebugText.text = $"Join successful ({t.Result}/{t.IsCompletedSuccessfully})";
+                Player.DebugText.text = $"Join successful ({t.Result}/{t.IsCompletedSuccessfully})";
                 busy = false;
                 Lobby = TargetLobby;
                 CurrentState = GameState.Client;
+
+                client.Connect(Lobby.Value.Owner.Id);
             }
             else
             {
-                Client.DebugText.text = $"Join error ({t.Result}/{t.IsCompletedSuccessfully})";
+                Player.DebugText.text = $"Join error ({t.Result}/{t.IsCompletedSuccessfully})";
                 CurrentState = GameState.Offline;
                 busy = false;
             }
@@ -113,14 +123,14 @@ public static class NetworkManager
     {
         Lobby?.Leave();
         Lobby = null;
+        server.Close();
+        client.Disconnect();
         CurrentState = GameState.Offline;
     }
 
-    public static void HandlePacket(Lobby lobby, Friend user, string message)
+    public static void HandlePacket(Friend user, string message)
     {
         if (CurrentState == GameState.Offline) return;
-        if (lobby.Id != Lobby?.Id) return;
-        //if (user.Id == SteamID) return;
         if (message == null) return;
 
         //Client.AddSufix($"P {user.Name}:{message}");
@@ -133,7 +143,7 @@ public static class NetworkManager
 
         if (p.type != "playerPos")
         {
-            Client.AddSufix($"{p.message}");
+            Player.AddSufix($"{p.message}");
         }
 
         NetworkEntity.SendGlobalPacket(p);
@@ -146,9 +156,20 @@ public static class NetworkManager
 
         var args = string.Join(":", data);
 
-        //Client.AddSufix($"S {args}");
+        if (data[0].ToString() != "playerPos")
+        {
+            Player.AddSufix($"S {args}");
+        }
+        Redirect(args);
+    }
 
-        Lobby.Value.SendChatString(args);
+    public static void Redirect(string msg, Connection? avoid = null)
+    {
+        foreach (Connection con in connections)
+        {
+            if (con != avoid)
+                con.SendMessage(msg);
+        }
     }
 }
 

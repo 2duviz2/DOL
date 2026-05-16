@@ -24,6 +24,7 @@ public static class PitonController
     public static void SendItemPiton(Vector3 position, Vector3 direction, float buff, string id = "Item_Piton")
     {
         NetworkManager.SendPacket("itemPiton", position.x, position.y, position.z, direction.x, direction.y, direction.z, buff, id);
+        SpawnItemPiton(position, direction, buff, id);
     }
 }
 
@@ -61,7 +62,7 @@ public static class PitonPatch
             Debug.DrawLine(Camera.main.transform.position, i.hit.point, Color.red);
             i.used = true;
             i.hand.lockHand = true;
-            PitonController.SendItemPiton(i.hit.collider.transform.TransformPoint(i.hitLocal), Quaternion.LookRotation(i.hit.normal) * Quaternion.Euler(0f, 0f, Random.Range(-30, 30)).eulerAngles, ENT_Player.playerObject.curBuffs.GetBuff("addPitonSecure"), i.item.prefabName);
+            PitonController.SendItemPiton(i.hit.collider.transform.TransformPoint(i.hitLocal), (Quaternion.LookRotation(i.hit.normal) * Quaternion.Euler(0f, 0f, Random.Range(-30, 30))).eulerAngles, ENT_Player.playerObject.curBuffs.GetBuff("addPitonSecure"), i.item.prefabName);
 
             i.hand.lockHand = false;
             CL_CameraControl.Shake(0.04f);

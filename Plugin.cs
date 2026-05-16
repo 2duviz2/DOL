@@ -10,6 +10,7 @@ using TMPro;
 using UnityEngine.SceneManagement;
 using DOL.Classes;
 using Steamworks;
+using DOL.Classes.Endpoints;
 
 [BepInPlugin(PluginInfo.GUID, PluginInfo.Name, PluginInfo.Version)]
 public class Plugin : BaseUnityPlugin
@@ -31,14 +32,25 @@ public class Plugin : BaseUnityPlugin
 
     public void Start()
     {
-        try { SteamClient.Init(3195790); }
-        catch { }
+        /*try { SteamClient.Init(3195790); }
+        catch { }*/
 
-        Client.CreateClient();
+        Player.CreatePlayer();
         SceneManager.sceneLoaded += SceneLoaded;
     }
 
-    void SceneLoaded(Scene scene, LoadSceneMode __)
+    public void Update()
+    {
+        if (NetworkManager.CurrentState != GameState.Offline)
+        {
+            if (NetworkManager.CurrentState == GameState.Host)
+                NetworkManager.server.manager.Receive();
+            else
+                NetworkManager.client.manager.Receive();
+        }
+    }
+
+    public void SceneLoaded(Scene scene, LoadSceneMode __)
     {
         if (scene.name == "Main-Menu")
         {
