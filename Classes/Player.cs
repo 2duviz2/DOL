@@ -1,6 +1,4 @@
-﻿global using static DOL.Classes.Player;
-
-namespace DOL.Classes;
+﻿namespace DOL.Classes;
 
 using DOL.UI;
 using Steamworks;
@@ -87,68 +85,67 @@ public class Player : NetworkEntity
 
     public override void GetPacket(Packet packet)
     {
-        if (packet.type == "playerPos")
+        switch (packet.type)
         {
-            float x = float.Parse(packet.data[1]);
-            float y = float.Parse(packet.data[2]);
-            float z = float.Parse(packet.data[3]);
-            Vector3 bodyPos = new Vector3(x, y, z);
+            case "playerPos":
+                float x = float.Parse(packet.data[1]);
+                float y = float.Parse(packet.data[2]);
+                float z = float.Parse(packet.data[3]);
+                Vector3 bodyPos = new Vector3(x, y, z);
 
-            x = float.Parse(packet.data[4]);
-            y = float.Parse(packet.data[5]);
-            z = float.Parse(packet.data[6]);
-            Vector3 lhPos = new Vector3(x, y, z);
+                x = float.Parse(packet.data[4]);
+                y = float.Parse(packet.data[5]);
+                z = float.Parse(packet.data[6]);
+                Vector3 lhPos = new Vector3(x, y, z);
 
-            x = float.Parse(packet.data[7]);
-            y = float.Parse(packet.data[8]);
-            z = float.Parse(packet.data[9]);
-            Vector3 rhPos = new Vector3(x, y, z);
+                x = float.Parse(packet.data[7]);
+                y = float.Parse(packet.data[8]);
+                z = float.Parse(packet.data[9]);
+                Vector3 rhPos = new Vector3(x, y, z);
 
-            PlayerGhost.UpdateGhost(packet.user, bodyPos, lhPos, rhPos);
-        }
+                PlayerGhost.UpdateGhost(packet.user, bodyPos, lhPos, rhPos);
+                break;
 
-        if (packet.type == "itemShoot")
-        {
-            float x = float.Parse(packet.data[1]);
-            float y = float.Parse(packet.data[2]);
-            float z = float.Parse(packet.data[3]);
-            Vector3 position = new Vector3(x, y, z);
+            case "itemShoot":
+                float x1 = float.Parse(packet.data[1]);
+                float y1 = float.Parse(packet.data[2]);
+                float z1 = float.Parse(packet.data[3]);
+                Vector3 position1 = new Vector3(x1, y1, z1);
 
-            x = float.Parse(packet.data[4]);
-            y = float.Parse(packet.data[5]);
-            z = float.Parse(packet.data[6]);
-            Vector3 direction = new Vector3(x, y, z);
+                x1 = float.Parse(packet.data[4]);
+                y1 = float.Parse(packet.data[5]);
+                z1 = float.Parse(packet.data[6]);
+                Vector3 direction1 = new Vector3(x1, y1, z1);
 
-            x = float.Parse(packet.data[7]);
-            y = float.Parse(packet.data[8]);
-            z = float.Parse(packet.data[9]);
-            Vector3 normalized = new Vector3(x, y, z);
+                x1 = float.Parse(packet.data[7]);
+                y1 = float.Parse(packet.data[8]);
+                z1 = float.Parse(packet.data[9]);
+                Vector3 normalized1 = new Vector3(x1, y1, z1);
 
-            string id = packet.data[10];
+                string id1 = packet.data[10];
+                RebarController.SpawnItemShoot(position1, direction1, normalized1, id1);
+                break;
 
-            RebarController.SpawnItemShoot(position, direction, normalized, id);
-        }
+            case "itemPiton":
+                AddSufix("Piton packet!");
 
-        if (packet.type == "itemPiton")
-        {
-            AddSufix("Piton packet!");
+                float x2 = float.Parse(packet.data[1]);
+                float y2 = float.Parse(packet.data[2]);
+                float z2 = float.Parse(packet.data[3]);
+                Vector3 position2 = new Vector3(x2, y2, z2);
 
-            float x = float.Parse(packet.data[1]);
-            float y = float.Parse(packet.data[2]);
-            float z = float.Parse(packet.data[3]);
-            Vector3 position = new Vector3(x, y, z);
+                x2 = float.Parse(packet.data[4]);
+                y2 = float.Parse(packet.data[5]);
+                z2 = float.Parse(packet.data[6]);
+                Vector3 direction2 = new Vector3(x2, y2, z2);
 
-            x = float.Parse(packet.data[4]);
-            y = float.Parse(packet.data[5]);
-            z = float.Parse(packet.data[6]);
-            Vector3 direction = new Vector3(x, y, z);
+                var buff2 = float.Parse(packet.data[7]);
+                string id2 = packet.data[8];
 
-            var buff = float.Parse(packet.data[7]);
-            string id = packet.data[8];
+                AddSufix($"id {id2} pos {position2} dir {direction2} buff {buff2}");
 
-            AddSufix($"id {id} pos {position} dir {direction} buff {buff}");
-
-            PitonController.SpawnItemPiton(position, direction, buff, id);
+                PitonController.SpawnItemPiton(position2, direction2, buff2, id2);
+                break;
         }
     }
 
