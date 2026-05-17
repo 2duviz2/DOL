@@ -3,7 +3,9 @@
 using DOL.Classes.Endpoints;
 using Steamworks;
 using Steamworks.Data;
+using System.Collections;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public static class NetworkManager
@@ -49,19 +51,21 @@ public static class NetworkManager
 
         busy = true;
 
-        CreateLobbyAsync();
+        Plugin.instance.StartCoroutine(CreateLobbyCoroutine());
     }
 
-    public static async void CreateLobbyAsync()
+    public static IEnumerator CreateLobbyCoroutine()
     {
-        Lobby lobby = (Lobby = await SteamMatchmaking.CreateLobbyAsync(16)).Value;
+        Task<Lobby?> createAsync = SteamMatchmaking.CreateLobbyAsync(16);
+        yield return createAsync.AsCoroutine();
+        Lobby = createAsync.Result;
         busy = false;
 
-        lobby.SetJoinable(true);
-        lobby.SetFriendsOnly();
-        lobby.SetData("version", PluginInfo.Version);
-        lobby.SetData("client", PluginInfo.Name);
-        lobby.SetData("seed", "0");
+        Lobby.Value.SetJoinable(true);
+        Lobby.Value.SetFriendsOnly();
+        Lobby.Value.SetData("version", PluginInfo.Version);
+        Lobby.Value.SetData("client", PluginInfo.Name);
+        Lobby.Value.SetData("seed", "0");
 
         CurrentState = GameState.Host;
 
@@ -93,15 +97,17 @@ public static class NetworkManager
 
         busy = true;
         
-        JoinLobbyAsync(TargetLobby);
+        Plugin.instance.StartCoroutine(JoinLobbyCoroutine(TargetLobby));
     }
 
-    public static async void JoinLobbyAsync(Lobby TargetLobby)
+    public static IEnumerator JoinLobbyCoroutine(Lobby TargetLobby)
     {
-        RoomEnter result = await TargetLobby.Join();
-        if (result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
+        Task<RoomEnter> joinAsync = TargetLobby.Join();
+        yield return joinAsync.AsCoroutine();
+
+        if (joinAsync.Result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
         {
-            Player.DebugText.text = $"Join successful ({result})";
+            Player.DebugText.text = $"Join successful ({joinAsync.Result})";
             busy = false;
             Lobby = TargetLobby;
             CurrentState = GameState.Client;
@@ -110,7 +116,7 @@ public static class NetworkManager
         }
         else
         {
-            Player.DebugText.text = $"Join error ({result})";
+            Player.DebugText.text = $"Join error ({joinAsync.Result})";
             CurrentState = GameState.Offline;
             busy = false;
         }

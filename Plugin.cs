@@ -39,14 +39,21 @@ public class Plugin : BaseUnityPlugin
         SceneManager.sceneLoaded += SceneLoaded;
     }
 
+    float timer;
     public void Update()
     {
         if (NetworkManager.CurrentState != GameState.Offline)
         {
-            if (NetworkManager.CurrentState == GameState.Host)
-                NetworkManager.server.manager?.Receive();
-            else
-                NetworkManager.client.manager?.Receive();
+            timer += Time.unscaledDeltaTime;
+
+            if (timer >= Player.interval)
+            {
+                timer = 0f;
+                if (NetworkManager.CurrentState == GameState.Host)
+                    NetworkManager.server.manager.Receive();
+                else
+                    NetworkManager.client.manager.Receive();
+            }
         }
     }
 

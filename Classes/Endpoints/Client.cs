@@ -2,10 +2,7 @@
 
 using Steamworks;
 using Steamworks.Data;
-using System;
-using System.Collections.Generic;
 using System.Text;
-using UnityEngine;
 
 public class Client : IConnectionManager
 {
@@ -34,7 +31,7 @@ public class Client : IConnectionManager
     public void OnConnected(ConnectionInfo info)
     {
         Player.AddSufix("Client connected");
-        manager.Connection.Id = info.Identity.SteamId.AccountId;
+        manager.Connection.UserData = unchecked((long)info.Identity.SteamId.Value);
         NetworkManager.connections = [manager.Connection];
     }
 
@@ -47,7 +44,7 @@ public class Client : IConnectionManager
     public unsafe void OnMessage(nint data, int size, long messageNum, long recvTime, int channel)
     {
         string packet = Encoding.UTF8.GetString((byte*)data, size);
-        Friend player = new(manager.Connection.Id | 76561197960265728u);
+        Friend player = new(unchecked((ulong)manager.Connection.UserData));
         Player.AddSufix("Client received packet from(" + player.Name + "), paclet: " + packet);
         NetworkManager.HandlePacket(player, packet);
     }

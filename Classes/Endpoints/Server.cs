@@ -32,7 +32,7 @@ public class Server : ISocketManager
     {
         Player.AddSufix("User is connecting...");
         connection.Accept();
-        connection.Id = info.Identity.SteamId.AccountId;
+        connection.UserData = unchecked((long)info.Identity.SteamId.Value);
     }
 
     public void OnConnected(Connection connection, ConnectionInfo info)
@@ -51,7 +51,7 @@ public class Server : ISocketManager
     public unsafe void OnMessage(Connection connection, NetIdentity identity, nint data, int size, long messageNum, long recvTime, int channel)
     {
         string packet = Encoding.UTF8.GetString((byte*)data, size);
-        Friend player = new(connection.Id | 76561197960265728u);
+        Friend player = new(unchecked((ulong)connection));
         Player.AddSufix("Server received packet from(" + player.Name + "), paclet: " + packet);
         NetworkManager.HandlePacket(player, packet);
 
