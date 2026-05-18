@@ -28,7 +28,7 @@ public class PlayerGhost : MonoBehaviour
     public static void CreateGhost(SteamId id)
     {
         var g = GameObject.CreatePrimitive(PrimitiveType.Capsule);
-        g.GetComponent<Renderer>().material = GetMaterial();
+        g.GetComponent<Renderer>().material = UnlitMat;
         g.GetComponent<Collider>().enabled = false;
         g.AddComponent<PlayerGhost>();
         ghosts.Add(id, g);
@@ -54,21 +54,25 @@ public class PlayerGhost : MonoBehaviour
         ph.rhPos.Set(rightHandPos);
     }
 
-    public static Material GetMaterial()
+    public static Material UnlitMat
     {
-        var mat = new Material(Shader.Find("Unlit/Color"))
+        get
         {
-            color = new Color(1, 0, 0, 1)
-        };
+            if (!field)
+                field = new Material(Shader.Find("Unlit/Color"))
+                {
+                    color = new Color(1, 0, 0, 1)
+                };
 
-        return mat;
+            return field;
+        }
     }
 
     public static GameObject CreateHand()
     {
         var g = GameObject.CreatePrimitive(PrimitiveType.Sphere);
         g.transform.localScale = Vector3.one * 0.2f;
-        g.GetComponent<Renderer>().material = GetMaterial();
+        g.GetComponent<Renderer>().material = UnlitMat;
         g.GetComponent<Collider>().enabled = false;
         return g;
     }

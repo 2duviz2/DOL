@@ -11,7 +11,7 @@ public static class UT_RadiusSpawnerPatch
     public static void Start(UT_RadiusSpawner __instance)
     {
         if (NetworkManager.CurrentState == GameState.Offline) return;
-        __instance.seed = Client.NetSeed;
+        __instance.seed = Player.NetSeed;
     }
 }
 
@@ -23,7 +23,7 @@ public static class UT_TriggerSpawnerPatch
     public static void Start(UT_TriggerSpawner __instance)
     {
         if (NetworkManager.CurrentState == GameState.Offline) return;
-        __instance.seed = Client.NetSeed;
+        __instance.seed = Player.NetSeed;
     }
 }
 
@@ -35,7 +35,7 @@ public static class UT_MeshFaceSpawnerPatch
     public static void Start(UT_MeshFaceSpawner __instance)
     {
         if (NetworkManager.CurrentState == GameState.Offline) return;
-        __instance.seed = Client.NetSeed;
+        __instance.seed = Player.NetSeed;
     }
 }
 

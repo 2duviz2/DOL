@@ -1,10 +1,18 @@
 ﻿using DOL.UI;
+using System;
+using System.Collections;
 using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
 public static class Extensions
 {
+    extension(IAsyncResult async)
+    {
+        public IEnumerator AsCoroutine() =>
+            new WaitUntil(() => async.IsCompleted);
+    }
+
     extension(RectTransform rect)
     {
         /// <summary> Sets both anchors and pivots to (0, 1) </summary>

@@ -1,11 +1,19 @@
 ﻿namespace DOL.Classes;
 
+using DOL.Classes.Endpoints;
 using Steamworks;
 using Steamworks.Data;
+using System.Collections;
+using System.Collections.Generic;
+using System.Threading.Tasks;
 using UnityEngine;
 
 public static class NetworkManager
 {
+    public static List<Connection> connections = [];
+    public static Server server = new();
+    public static Client client = new();
+
     public static GameState CurrentState = GameState.Offline;
 
     public static bool busy;
@@ -23,7 +31,7 @@ public static class NetworkManager
         }
     }
 
-    public static string? _steamName;
+    public static string _steamName;
     public static string SteamName
     {
         get
@@ -43,33 +51,36 @@ public static class NetworkManager
 
         busy = true;
 
-        CreateLobbyAsync();
+        Plugin.instance.StartCoroutine(CreateLobbyCoroutine());
     }
 
-    public static async void CreateLobbyAsync()
+    public static IEnumerator CreateLobbyCoroutine()
     {
-        await SteamMatchmaking.CreateLobbyAsync(16).ContinueWith(t =>
-        {
-            busy = false;
-            Lobby = t.Result;
+        Task<Lobby?> createAsync = SteamMatchmaking.CreateLobbyAsync(16);
+        yield return createAsync.AsCoroutine();
+        Lobby = createAsync.Result;
+        busy = false;
 
-            Lobby?.SetJoinable(true);
-            Lobby?.SetFriendsOnly();
-            Lobby?.SetData("version", PluginInfo.Version);
-            Lobby?.SetData("client", PluginInfo.Name);
-            Lobby?.SetData("seed", "0");
+        Lobby.Value.SetJoinable(true);
+        Lobby.Value.SetFriendsOnly();
+        Lobby.Value.SetData("version", PluginInfo.Version);
+        Lobby.Value.SetData("client", PluginInfo.Name);
+        Lobby.Value.SetData("seed", "0");
 
-            CurrentState = GameState.Host;
-        });
+        CurrentState = GameState.Host;
+
+        Player.AddSufix("connected to steam lobby");
+
+        server.Open();
     }
 
     public static void JoinCopiedLobby()
     {
-        Client.DebugText.text = "Joining canceled";
+        Player.DebugText.text = "Joining canceled";
         if (busy || CurrentState != GameState.Offline) return;
         if (!ulong.TryParse(GUIUtility.systemCopyBuffer, out var lobbyID))
         {
-            Client.DebugText.text = "Invalid lobby code";
+            Player.DebugText.text = "Invalid lobby code";
             return;
         }
         var lobby = new Lobby(lobbyID);
@@ -78,49 +89,51 @@ public static class NetworkManager
 
     public static void JoinLobby(Lobby TargetLobby)
     {
-        Client.DebugText.text = "Joining cancelled";
+        Player.DebugText.text = "Joining cancelled";
 
         if (busy || CurrentState != GameState.Offline) return;
 
-        Client.DebugText.text = "Joining...";
+        Player.DebugText.text = "Joining...";
 
         busy = true;
         
-        JoinLobbyAsync(TargetLobby);
+        Plugin.instance.StartCoroutine(JoinLobbyCoroutine(TargetLobby));
     }
 
-    public static async void JoinLobbyAsync(Lobby TargetLobby)
+    public static IEnumerator JoinLobbyCoroutine(Lobby TargetLobby)
     {
-        await TargetLobby.Join().ContinueWith((t) =>
+        Task<RoomEnter> joinAsync = TargetLobby.Join();
+        yield return joinAsync.AsCoroutine();
+
+        if (joinAsync.Result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
         {
-            if (t.IsCompletedSuccessfully && t.Result == RoomEnter.Success && TargetLobby.GetData("client") == PluginInfo.Name)
-            {
-                Client.DebugText.text = $"Join successful ({t.Result}/{t.IsCompletedSuccessfully})";
-                busy = false;
-                Lobby = TargetLobby;
-                CurrentState = GameState.Client;
-            }
-            else
-            {
-                Client.DebugText.text = $"Join error ({t.Result}/{t.IsCompletedSuccessfully})";
-                CurrentState = GameState.Offline;
-                busy = false;
-            }
-        });
+            Player.DebugText.text = $"Join successful ({joinAsync.Result})";
+            busy = false;
+            Lobby = TargetLobby;
+            CurrentState = GameState.Client;
+
+            client.Connect(Lobby.Value.Owner.Id);
+        }
+        else
+        {
+            Player.DebugText.text = $"Join error ({joinAsync.Result})";
+            CurrentState = GameState.Offline;
+            busy = false;
+        }
     }
 
     public static void LeaveLobby()
     {
         Lobby?.Leave();
         Lobby = null;
+        server.Close();
+        client.Disconnect();
         CurrentState = GameState.Offline;
     }
 
-    public static void HandlePacket(Lobby lobby, Friend user, string message)
+    public static void HandlePacket(Friend user, string message)
     {
         if (CurrentState == GameState.Offline) return;
-        if (lobby.Id != Lobby?.Id) return;
-        //if (user.Id == SteamID) return;
         if (message == null) return;
 
         //Client.AddSufix($"P {user.Name}:{message}");
@@ -133,7 +146,7 @@ public static class NetworkManager
 
         if (p.type != "playerPos")
         {
-            Client.AddSufix($"{p.message}");
+            Player.AddSufix($"{p.message}");
         }
 
         NetworkEntity.SendGlobalPacket(p);
@@ -146,9 +159,20 @@ public static class NetworkManager
 
         var args = string.Join(":", data);
 
-        //Client.AddSufix($"S {args}");
+        if (data[0].ToString() != "playerPos")
+        {
+            Player.AddSufix($"S {args}");
+        }
+        Redirect(args);
+    }
 
-        Lobby.Value.SendChatString(args);
+    public static void Redirect(string msg, Connection? avoid = null)
+    {
+        foreach (Connection con in connections)
+        {
+            if (con != avoid)
+                con.SendMessage(msg);
+        }
     }
 }
 

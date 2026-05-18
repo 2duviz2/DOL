@@ -12,7 +12,7 @@ public static class WorldLoaderPatch
     {
         if (NetworkManager.IsClient)
         {
-            __instance.seed = __instance.startingSeed = Client.NetSeed;
+            __instance.seed = __instance.startingSeed = Player.NetSeed;
         }
     }
 }
