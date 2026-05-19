@@ -34,20 +34,11 @@ public class NetworkEntity : MonoBehaviour
         entities.Remove(this);
     }
 
-    public virtual void NetUpdate()
-    {
+    public virtual void NetUpdate() { }
 
-    }
+    public virtual void OfflineUpdate() { }
 
-    public virtual void OfflineUpdate()
-    {
-
-    }
-
-    public virtual void GetPacket(Packet packet)
-    {
-
-    }
+    public virtual void GetPacket(Packet packet) { }
 
     public static void SendGlobalPacket(Packet packet)
     {
@@ -55,19 +46,15 @@ public class NetworkEntity : MonoBehaviour
         {
             if (entity == null)
             {
+                Player.AddSuffixDebug("removing null entity");
                 entities.Remove(entity);
                 continue;
             }
 
             if (entity.isOwned)
             {
-                entity.SendPacket(packet);
+                entity.GetPacket(packet);
             }
         }
-    }
-
-    public void SendPacket(Packet packet)
-    {
-        GetPacket(packet);
     }
 }

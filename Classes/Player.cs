@@ -2,6 +2,8 @@
 
 using DOL.UI;
 using Steamworks;
+using System.Collections.Generic;
+using System.Diagnostics;
 using TMPro;
 using UnityEngine;
 
@@ -13,14 +15,14 @@ public class Player : NetworkEntity
 
     public static int NetSeed;
 
-    static string sufix = "\n";
+    public static List<string> suffixes = [string.Empty];
 
     public const float interval = 1f/15f;
     float timer = 10000f;
 
     public static void CreatePlayer()
     {
-        instance = new GameObject().AddComponent<Player>();
+        instance = new GameObject("player").AddComponent<Player>();
         DontDestroyOnLoad(instance);
 
         var canvas = Builder.Canvas();
@@ -46,32 +48,19 @@ public class Player : NetworkEntity
             Sync();
         }
 
-        if (NetworkManager.IsHost)
+        if (WorldLoader.instance != null && NetSeed != WorldLoader.instance.seed)
         {
-            if (WorldLoader.instance != null)
+            if (NetworkManager.IsHost)
             {
-                if (NetSeed != WorldLoader.instance.seed)
-                {
-                    NetSeed = WorldLoader.instance.seed;
-                    NetworkManager.Lobby.Value.SetData("seed", NetSeed.ToString());
-                }
+                NetSeed = WorldLoader.instance.seed;
+                NetworkManager.SendPacket("seed", NetSeed);
             }
-        }
 
-        if (NetworkManager.IsClient)
-        {
-            if (WorldLoader.instance != null)
+            if (NetworkManager.IsClient)
             {
-                var lobbySeed = NetworkManager.Lobby.Value.GetData("seed");
-                if (NetworkManager.Lobby.HasValue)
-                {
-                    if (int.TryParse(lobbySeed, out var newSeed) && newSeed != NetSeed && WorldLoader.instance.seed != newSeed)
-                    {
-                        NetSeed = newSeed;
-                        WorldLoader.instance.seed = newSeed;
-                        CL_GameManager.ChangeState("restart");
-                    }
-                }
+                WorldLoader.instance.seed = NetSeed;
+                CL_GameManager.ChangeState("restart");
+                WorldLoader.instance.seed = NetSeed;
             }
         }
     }
@@ -85,64 +74,69 @@ public class Player : NetworkEntity
 
     public override void GetPacket(Packet packet)
     {
-        switch (packet.type)
+        switch (packet.Type)
         {
+            case "seed" when packet.User == NetworkManager.host?.Id:
+                NetSeed = int.Parse(packet.Data[1]);
+
+                break;
+
             case "playerPos":
-                float x = float.Parse(packet.data[1]);
-                float y = float.Parse(packet.data[2]);
-                float z = float.Parse(packet.data[3]);
+                float x = float.Parse(packet.Data[1]);
+                float y = float.Parse(packet.Data[2]);
+                float z = float.Parse(packet.Data[3]);
                 Vector3 bodyPos = new Vector3(x, y, z);
 
-                x = float.Parse(packet.data[4]);
-                y = float.Parse(packet.data[5]);
-                z = float.Parse(packet.data[6]);
+                x = float.Parse(packet.Data[4]);
+                y = float.Parse(packet.Data[5]);
+                z = float.Parse(packet.Data[6]);
                 Vector3 lhPos = new Vector3(x, y, z);
 
-                x = float.Parse(packet.data[7]);
-                y = float.Parse(packet.data[8]);
-                z = float.Parse(packet.data[9]);
+                x = float.Parse(packet.Data[7]);
+                y = float.Parse(packet.Data[8]);
+                z = float.Parse(packet.Data[9]);
                 Vector3 rhPos = new Vector3(x, y, z);
 
-                PlayerGhost.UpdateGhost(packet.user, bodyPos, lhPos, rhPos);
+                PlayerGhost.UpdateGhost(packet.User, bodyPos, lhPos, rhPos);
                 break;
 
             case "itemShoot":
-                float x1 = float.Parse(packet.data[1]);
-                float y1 = float.Parse(packet.data[2]);
-                float z1 = float.Parse(packet.data[3]);
+                float x1 = float.Parse(packet.Data[1]);
+                float y1 = float.Parse(packet.Data[2]);
+                float z1 = float.Parse(packet.Data[3]);
                 Vector3 position1 = new Vector3(x1, y1, z1);
 
-                x1 = float.Parse(packet.data[4]);
-                y1 = float.Parse(packet.data[5]);
-                z1 = float.Parse(packet.data[6]);
+                x1 = float.Parse(packet.Data[4]);
+                y1 = float.Parse(packet.Data[5]);
+                z1 = float.Parse(packet.Data[6]);
                 Vector3 direction1 = new Vector3(x1, y1, z1);
 
-                x1 = float.Parse(packet.data[7]);
-                y1 = float.Parse(packet.data[8]);
-                z1 = float.Parse(packet.data[9]);
+                x1 = float.Parse(packet.Data[7]);
+                y1 = float.Parse(packet.Data[8]);
+                z1 = float.Parse(packet.Data[9]);
                 Vector3 normalized1 = new Vector3(x1, y1, z1);
 
-                string id1 = packet.data[10];
+                string id1 = packet.Data[10];
                 RebarController.SpawnItemShoot(position1, direction1, normalized1, id1);
                 break;
 
             case "itemPiton":
-                AddSufix("Piton packet!");
+                AddSuffixDebug("Piton packet!");
 
-                float x2 = float.Parse(packet.data[1]);
-                float y2 = float.Parse(packet.data[2]);
-                float z2 = float.Parse(packet.data[3]);
+                float x2 = float.Parse(packet.Data[1]);
+                float y2 = float.Parse(packet.Data[2]);
+                float z2 = float.Parse(packet.Data[3]);
                 Vector3 position2 = new Vector3(x2, y2, z2);
 
-                x2 = float.Parse(packet.data[4]);
-                y2 = float.Parse(packet.data[5]);
-                z2 = float.Parse(packet.data[6]);
+                x2 = float.Parse(packet.Data[4]);
+                y2 = float.Parse(packet.Data[5]);
+                z2 = float.Parse(packet.Data[6]);
                 Vector3 direction2 = new Vector3(x2, y2, z2);
 
-                var buff2 = float.Parse(packet.data[7]);
-                string id2 = packet.data[8];
+                var buff2 = float.Parse(packet.Data[7]);
+                string id2 = packet.Data[8];
 
-                AddSufix($"id {id2} pos {position2} dir {direction2} buff {buff2}");
+                AddSuffixDebug($"id {id2} pos {position2} dir {direction2} buff {buff2}");
 
                 PitonController.SpawnItemPiton(position2, direction2, buff2, id2);
                 break;
@@ -156,10 +150,8 @@ public class Player : NetworkEntity
         var rh = NetworkManager.LocalPlayer.hands[1];
         Vector3 leftHandPos = lh.GetHoldWorldPosition();
         Vector3 rightHandPos = rh.GetHoldWorldPosition();
-        if (lh.GetHandItem() != null)
-            leftHandPos = lh.GetHandItem().transform.position;
-        if (rh.GetHandItem() != null)
-            rightHandPos = rh.GetHandItem().transform.position;
+        if (lh.GetHandItem() != null) leftHandPos = lh.GetHandItem().transform.position;
+        if (rh.GetHandItem() != null) rightHandPos = rh.GetHandItem().transform.position;
         float m = 100;
         bodyPos = SnapVector(bodyPos, m);
         leftHandPos = SnapVector(leftHandPos, m);
@@ -169,29 +161,42 @@ public class Player : NetworkEntity
 
     public void UpdateText(string prefix)
     {
-        DebugText.text = $"{prefix}\n" +
-            $"Time: {Time.unscaledTime:F2}\n" +
-            $"State: {NetworkManager.CurrentState}\n" +
-            $"IsHost: {NetworkManager.IsHost}\n" +
-            $"LocalPlayer: {(NetworkManager.LocalPlayer ? "Not null" : "Null")}\n" +
-            $"Busy: {NetworkManager.busy}\n" +
-            $"MemberCount: {(NetworkManager.Lobby.HasValue ? NetworkManager.Lobby.Value.MemberCount : "Not in lobby")}\n" +
-            $"SteamID: {NetworkManager.SteamID}\n" +
-            $"SteamName: {NetworkManager.SteamName}\n" +
-            $"\n" +
-            $"NetSeed: {NetSeed}\n" +
-            $"Seed: {WorldLoader.instance?.seed}\n" +
-            $"StartingSeed: {WorldLoader.instance?.startingSeed}\n\n<color=#ffffff22>" + sufix;
+        DebugText.text = $@"{prefix}
+Time: {Time.unscaledTime:F2}
+State: {NetworkManager.CurrentState}
+IsHost: {NetworkManager.IsHost}
+LocalPlayer: {(NetworkManager.LocalPlayer ? "Not null" : "Null")}
+Busy: {NetworkManager.busy}
+MemberCount: {(NetworkManager.Lobby.HasValue ? NetworkManager.Lobby.Value.MemberCount : "Not in lobby")}
+SteamID: {NetworkManager.SteamID}
+SteamName: {NetworkManager.SteamName}
+HostID: {NetworkManager.host}
+
+NetSeed: {NetSeed}
+Seed: {WorldLoader.instance?.seed}
+StartingSeed: {WorldLoader.instance?.startingSeed}
+
+
+<alpha=#22><noparse>{string.Join("\n", suffixes)}";
     }
 
-    public static void AddSufix(string text)
+    /// <summary> Conditionals are compiled out by roslyn if the compiler constant isnt set </summary>
+    /// <remarks> i put smt in the csproj that u just gotta uncomment btw duvi </remarks>
+    [Conditional("Debug")] public static void AddSuffixDebug(string text) => AddSuffix(text);
+
+    public static void AddSuffix(string text)
     {
         Plugin.LogInfo(text);
-        sufix = text + "\n" + sufix;
-        var split = sufix.Split('\n');
-        if (split.Length > 5)
+
+        if (suffixes[0] == text)
         {
-            sufix = string.Join("\n", split, 0, 5);
+            suffixes[0] = text;
+        }
+        else
+        {
+            suffixes.Insert(0, text);
+            if (suffixes.Count > 5)
+                suffixes.RemoveAt(4);
         }
     }
 

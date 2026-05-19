@@ -18,9 +18,9 @@ public static class Extensions
         /// <summary> Sets both anchors and pivots to (0, 1) </summary>
         public void ApplyDefaults()
         {
-            rect.anchorMin = new Vector2(0, 1);
-            rect.anchorMax = new Vector2(0, 1);
-            rect.pivot = new Vector2(0, 1);
+            rect.anchorMin = new(0f, 1f);
+            rect.anchorMax = new(0f, 1f);
+            rect.pivot = new(0f, 1f);
         }
     }
 
@@ -36,7 +36,7 @@ public static class Extensions
         (
             Vector2 position,
             Vector2 sizeDelta,
-            string defaultText = "Ella jura",
+            string defaultText = "Ella jura", // really
             float size = 20,
             TextAlignmentOptions alignment = TextAlignmentOptions.TopLeft,
             Color? color = null,

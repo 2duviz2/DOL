@@ -10,13 +10,13 @@ public class Client : IConnectionManager
 
     public void Connect(SteamId hostId)
     {
-        Player.AddSufix("Client connecting to server... (" + new Friend(hostId).Name + ")");
+        Player.AddSuffix("Client connecting to server... (" + new Friend(hostId).Name + ")");
         manager = SteamNetworkingSockets.ConnectRelay(hostId, Server.virtualport, this);
     }
 
     public void Disconnect()
     {
-        Player.AddSufix("Client disconnecting from server...");
+        Player.AddSuffix("Client disconnecting from server...");
         manager?.Close();
         manager = null;
 
@@ -25,19 +25,19 @@ public class Client : IConnectionManager
 
     public void OnConnecting(ConnectionInfo info)
     {
-        Player.AddSufix("Client connecting to server... (" + new Friend(info.Identity.SteamId).Name + ")");
+        Player.AddSuffix("Client connecting to server... (" + new Friend(info.Identity.SteamId).Name + ")");
     }
 
     public void OnConnected(ConnectionInfo info)
     {
-        Player.AddSufix("Client connected");
+        Player.AddSuffix("Client connected");
         manager.Connection.UserData = unchecked((long)info.Identity.SteamId.Value);
         NetworkManager.connections = [manager.Connection];
     }
 
     public void OnDisconnected(ConnectionInfo info)
     {
-        Player.AddSufix("Client disconnected");
+        Player.AddSuffix("Client disconnected");
         NetworkManager.connections.Clear();
     }
 
@@ -45,7 +45,7 @@ public class Client : IConnectionManager
     {
         string packet = Encoding.UTF8.GetString((byte*)data, size);
         Friend player = new(unchecked((ulong)manager.Connection.UserData));
-        Player.AddSufix("Client received packet from(" + player.Name + "), paclet: " + packet);
+        Player.AddSuffixDebug("Client received packet from(" + player.Name + "), packet: " + packet);
         NetworkManager.HandlePacket(player, packet);
     }
 }

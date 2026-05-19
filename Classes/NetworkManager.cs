@@ -20,6 +20,7 @@ public static class NetworkManager
 
     public static ENT_Player LocalPlayer;
     public static Lobby? Lobby;
+    public static Friend? host;
 
     public static SteamId? _steamID;
     public static SteamId SteamID
@@ -59,17 +60,17 @@ public static class NetworkManager
         Task<Lobby?> createAsync = SteamMatchmaking.CreateLobbyAsync(16);
         yield return createAsync.AsCoroutine();
         Lobby = createAsync.Result;
+        host = Lobby.Value.Owner;
         busy = false;
 
         Lobby.Value.SetJoinable(true);
         Lobby.Value.SetFriendsOnly();
         Lobby.Value.SetData("version", PluginInfo.Version);
         Lobby.Value.SetData("client", PluginInfo.Name);
-        Lobby.Value.SetData("seed", "0");
 
         CurrentState = GameState.Host;
 
-        Player.AddSufix("connected to steam lobby");
+        Player.AddSuffix("connected to steam lobby");
 
         server.Open();
     }
@@ -110,6 +111,7 @@ public static class NetworkManager
             Player.DebugText.text = $"Join successful ({joinAsync.Result})";
             busy = false;
             Lobby = TargetLobby;
+            host = TargetLobby.Owner;
             CurrentState = GameState.Client;
 
             client.Connect(Lobby.Value.Owner.Id);
@@ -126,6 +128,7 @@ public static class NetworkManager
     {
         Lobby?.Leave();
         Lobby = null;
+        host = null;
         server.Close();
         client.Disconnect();
         CurrentState = GameState.Offline;
@@ -133,20 +136,12 @@ public static class NetworkManager
 
     public static void HandlePacket(Friend user, string message)
     {
-        if (CurrentState == GameState.Offline) return;
-        if (message == null) return;
+        if (CurrentState == GameState.Offline || message == null) return;
 
-        //Client.AddSufix($"P {user.Name}:{message}");
-
-        var p = new Packet
+        Packet p = new(user.Id, message);
+        if (p.Type != "playerPos")
         {
-            user = user.Id,
-            message = message,
-        };
-
-        if (p.type != "playerPos")
-        {
-            Player.AddSufix($"{p.message}");
+            Player.AddSuffixDebug($"R {user.Name} :: {p.Message}");
         }
 
         NetworkEntity.SendGlobalPacket(p);
@@ -154,15 +149,14 @@ public static class NetworkManager
 
     public static void SendPacket(params object[] data)
     {
-        if (CurrentState == GameState.Offline) return;
-        if (Lobby == null) return;
+        if (CurrentState == GameState.Offline || Lobby == null) return;
 
-        var args = string.Join(":", data);
-
+        string args = string.Join(":", data);
         if (data[0].ToString() != "playerPos")
         {
-            Player.AddSufix($"S {args}");
+            Player.AddSuffixDebug($"S {args}");
         }
+
         Redirect(args);
     }
 

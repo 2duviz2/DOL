@@ -13,6 +13,9 @@
 		<NoWarn>IDE0130, IDE0251, IDE0062</NoWarn>
 		<GenerateAssemblyInfo>false</GenerateAssemblyInfo>
 
+      <!-- Compile time constants -->
+      <!-- <DefineConstants>Debug</DefineConstants> -->
+
 		<!-- Resources so nuget can fucking find BepInEx and Unity. -->
 		<RestoreAdditionalProjectSources>
 			https://api.nuget.org/v3/index.json;
