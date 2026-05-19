@@ -16,15 +16,6 @@ public class Server : ISocketManager
         Player.AddSuffixDebug("Opened server...");
     }
 
-    /// <summary> Opens a direct server, these expose your IP but they completely avoid steam so cracked clients and regular clients can connect to eachother. </summary>
-    /// <remarks> Experimental and not fully supported. </remarks>
-    public void OpenDirectLobby()
-    {
-        Player.AddSuffix("Opening server...");
-        manager = SteamNetworkingSockets.CreateRelaySocket(virtualport, this);
-        Player.AddSuffixDebug("Opened server...");
-    }
-
     public void Close()
     {
         Player.AddSuffix("Closing server...");
