@@ -13,14 +13,17 @@ public class Server : ISocketManager
 
     public void Open()
     {
-        Player.AddSufix("Opening server...");
+        Player.AddSuffix("Opening server...");
+        manager = SteamNetworkingSockets.CreateRelaySocket(virtualport, this);
+        Player.AddSuffixDebug("Opened server...");
+    }
         manager = SteamNetworkingSockets.CreateRelaySocket(virtualport, this);
         Player.AddSufix("Opened server...");
     }
 
     public void Close()
     {
-        Player.AddSufix("Closing server...");
+        Player.AddSuffix("Closing server...");
         manager?.Close();
         manager = null;
 
@@ -38,7 +41,7 @@ public class Server : ISocketManager
     public void OnConnected(Connection connection, ConnectionInfo info)
     {
         // this is where duviz will need to add a level join packet thingamajig
-        Player.AddSufix("User connected " + new Friend(info.Identity.SteamId).Name);
+        connection.SendMessage(string.Join(":", ["seed", Player.NetSeed]));
         NetworkManager.connections.Add(connection);
     }
 

@@ -2,29 +2,13 @@
 
 using Steamworks;
 
-public struct Packet
+public struct Packet(SteamId user, string message)
 {
-    public SteamId user;
-    public string message;
+    public SteamId User = user;
+    public string Message = message;
+    public string[] Data = message.Split(':');
+    public string Type => Data[0];
 
-    public string type => GetPacketType(this);
-    public string firstData => GetPacketData(this);
-    public string[] data => SplitPacket(this);
-
-    public static string GetPacketType(Packet packet)
-    {
-        var split = SplitPacket(packet);
-        return split[0];
-    }
-
-    public static string GetPacketData(Packet packet)
-    {
-        var split = SplitPacket(packet);
-        return split[1];
-    }
-
-    public static string[] SplitPacket(Packet packet)
-    {
-        return packet.message.Split(':');
-    }
+    public override string ToString() =>
+        new Friend(User) + " :: " + Message;
 }
