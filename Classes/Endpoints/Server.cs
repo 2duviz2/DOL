@@ -2,8 +2,6 @@
 
 using Steamworks;
 using Steamworks.Data;
-using System;
-using System.Collections.Generic;
 using System.Text;
 
 public class Server : ISocketManager
@@ -17,8 +15,14 @@ public class Server : ISocketManager
         manager = SteamNetworkingSockets.CreateRelaySocket(virtualport, this);
         Player.AddSuffixDebug("Opened server...");
     }
+
+    /// <summary> Opens a direct server, these expose your IP but they completely avoid steam so cracked clients and regular clients can connect to eachother. </summary>
+    /// <remarks> Experimental and not fully supported. </remarks>
+    public void OpenDirectLobby()
+    {
+        Player.AddSuffix("Opening server...");
         manager = SteamNetworkingSockets.CreateRelaySocket(virtualport, this);
-        Player.AddSufix("Opened server...");
+        Player.AddSuffixDebug("Opened server...");
     }
 
     public void Close()
@@ -28,26 +32,26 @@ public class Server : ISocketManager
         manager = null;
 
         NetworkManager.connections.Clear();
-        Player.AddSufix("Closed server");
+        Player.AddSuffixDebug("Closed server");
     }
 
     public void OnConnecting(Connection connection, ConnectionInfo info)
     {
-        Player.AddSufix("User is connecting...");
+        Player.AddSuffixDebug("User is connecting...");
         connection.Accept();
         connection.UserData = unchecked((long)info.Identity.SteamId.Value);
     }
 
     public void OnConnected(Connection connection, ConnectionInfo info)
     {
-        // this is where duviz will need to add a level join packet thingamajig
+        Player.AddSuffix("User connected " + new Friend(info.Identity.SteamId).Name);
         connection.SendMessage(string.Join(":", ["seed", Player.NetSeed]));
         NetworkManager.connections.Add(connection);
     }
 
     public void OnDisconnected(Connection connection, ConnectionInfo info)
     {
-        Player.AddSufix("User disconnected " + new Friend(info.Identity.SteamId).Name);
+        Player.AddSuffix("User disconnected " + new Friend(info.Identity.SteamId).Name);
         NetworkManager.connections.Remove(connection);
     }
 
@@ -55,7 +59,7 @@ public class Server : ISocketManager
     {
         string packet = Encoding.UTF8.GetString((byte*)data, size);
         Friend player = new(unchecked((ulong)connection));
-        Player.AddSufix("Server received packet from(" + player.Name + "), paclet: " + packet);
+        Player.AddSuffixDebug("Server received packet from(" + player.Name + "), packet: " + packet);
         NetworkManager.HandlePacket(player, packet);
 
         NetworkManager.Redirect(packet, connection); // redirect to all other clients teehee >w<

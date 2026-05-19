@@ -2,6 +2,8 @@
 
 using DOL.UI;
 using Steamworks;
+using System.Collections.Generic;
+using System.Diagnostics;
 using TMPro;
 using UnityEngine;
 
@@ -13,14 +15,14 @@ public class Player : NetworkEntity
 
     public static int NetSeed;
 
-    static string sufix = "\n";
+    public static List<string> suffixes = [string.Empty];
 
     public const float interval = 1f/15f;
     float timer = 10000f;
 
     public static void CreatePlayer()
     {
-        instance = new GameObject().AddComponent<Player>();
+        instance = new GameObject("player").AddComponent<Player>();
         DontDestroyOnLoad(instance);
 
         var canvas = Builder.Canvas();
@@ -48,20 +50,20 @@ public class Player : NetworkEntity
 
         if (WorldLoader.instance != null && NetSeed != WorldLoader.instance.seed)
         {
-        if (NetworkManager.IsHost)
-        {
-                    NetSeed = WorldLoader.instance.seed;
+            if (NetworkManager.IsHost)
+            {
+                NetSeed = WorldLoader.instance.seed;
                 NetworkManager.SendPacket("seed", NetSeed);
-                }
-
-        if (NetworkManager.IsClient)
-        {
-                WorldLoader.instance.seed = NetSeed;
-                        CL_GameManager.ChangeState("restart");
-                WorldLoader.instance.seed = NetSeed;
-                    }
-                }
             }
+
+            if (NetworkManager.IsClient)
+            {
+                WorldLoader.instance.seed = NetSeed;
+                CL_GameManager.ChangeState("restart");
+                WorldLoader.instance.seed = NetSeed;
+            }
+        }
+    }
 
     public override void OfflineUpdate()
     {
@@ -119,7 +121,7 @@ public class Player : NetworkEntity
                 break;
 
             case "itemPiton":
-                AddSufix("Piton packet!");
+                AddSuffixDebug("Piton packet!");
 
                 float x2 = float.Parse(packet.Data[1]);
                 float y2 = float.Parse(packet.Data[2]);
@@ -134,7 +136,7 @@ public class Player : NetworkEntity
                 var buff2 = float.Parse(packet.Data[7]);
                 string id2 = packet.Data[8];
 
-                AddSufix($"id {id2} pos {position2} dir {direction2} buff {buff2}");
+                AddSuffixDebug($"id {id2} pos {position2} dir {direction2} buff {buff2}");
 
                 PitonController.SpawnItemPiton(position2, direction2, buff2, id2);
                 break;
@@ -159,29 +161,42 @@ public class Player : NetworkEntity
 
     public void UpdateText(string prefix)
     {
-        DebugText.text = $"{prefix}\n" +
-            $"Time: {Time.unscaledTime:F2}\n" +
-            $"State: {NetworkManager.CurrentState}\n" +
-            $"IsHost: {NetworkManager.IsHost}\n" +
-            $"LocalPlayer: {(NetworkManager.LocalPlayer ? "Not null" : "Null")}\n" +
-            $"Busy: {NetworkManager.busy}\n" +
-            $"MemberCount: {(NetworkManager.Lobby.HasValue ? NetworkManager.Lobby.Value.MemberCount : "Not in lobby")}\n" +
-            $"SteamID: {NetworkManager.SteamID}\n" +
-            $"SteamName: {NetworkManager.SteamName}\n" +
-            $"\n" +
-            $"NetSeed: {NetSeed}\n" +
-            $"Seed: {WorldLoader.instance?.seed}\n" +
-            $"StartingSeed: {WorldLoader.instance?.startingSeed}\n\n<color=#ffffff22>" + sufix;
+        DebugText.text = $@"{prefix}
+Time: {Time.unscaledTime:F2}
+State: {NetworkManager.CurrentState}
+IsHost: {NetworkManager.IsHost}
+LocalPlayer: {(NetworkManager.LocalPlayer ? "Not null" : "Null")}
+Busy: {NetworkManager.busy}
+MemberCount: {(NetworkManager.Lobby.HasValue ? NetworkManager.Lobby.Value.MemberCount : "Not in lobby")}
+SteamID: {NetworkManager.SteamID}
+SteamName: {NetworkManager.SteamName}
+HostID: {NetworkManager.host}
+
+NetSeed: {NetSeed}
+Seed: {WorldLoader.instance?.seed}
+StartingSeed: {WorldLoader.instance?.startingSeed}
+
+
+<alpha=#22><noparse>{string.Join("\n", suffixes)}";
     }
 
-    public static void AddSufix(string text)
+    /// <summary> Conditionals are compiled out by roslyn if the compiler constant isnt set </summary>
+    /// <remarks> i put smt in the csproj that u just gotta uncomment btw duvi </remarks>
+    [Conditional("Debug")] public static void AddSuffixDebug(string text) => AddSuffix(text);
+
+    public static void AddSuffix(string text)
     {
         Plugin.LogInfo(text);
-        sufix = text + "\n" + sufix;
-        var split = sufix.Split('\n');
-        if (split.Length > 5)
+
+        if (suffixes[0] == text)
         {
-            sufix = string.Join("\n", split, 0, 5);
+            suffixes[0] = text;
+        }
+        else
+        {
+            suffixes.Insert(0, text);
+            if (suffixes.Count > 5)
+                suffixes.RemoveAt(4);
         }
     }
 

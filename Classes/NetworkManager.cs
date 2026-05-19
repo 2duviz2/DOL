@@ -154,7 +154,7 @@ public static class NetworkManager
         string args = string.Join(":", data);
         if (data[0].ToString() != "playerPos")
         {
-            Player.AddSufix($"S {args}");
+            Player.AddSuffixDebug($"S {args}");
         }
 
         Redirect(args);

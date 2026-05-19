@@ -46,6 +46,7 @@ public class NetworkEntity : MonoBehaviour
         {
             if (entity == null)
             {
+                Player.AddSuffixDebug("removing null entity");
                 entities.Remove(entity);
                 continue;
             }
