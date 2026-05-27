@@ -135,10 +135,21 @@ public class Player : NetworkEntity
 
                 var buff2 = float.Parse(packet.Data[7]);
                 string id2 = packet.Data[8];
+                var id3 = int.Parse(packet.Data[9]);
 
                 AddSuffixDebug($"id {id2} pos {position2} dir {direction2} buff {buff2}");
 
-                PitonController.SpawnItemPiton(position2, direction2, buff2, id2);
+                PitonController.SpawnItemPiton(position2, direction2, buff2, id2, id3);
+                break;
+
+            case "itemPitonHammerIn":
+                AddSuffixDebug("Piton hammer packet!");
+
+                var id = int.Parse(packet.Data[1]);
+                var amount = float.Parse(packet.Data[2]);
+
+                PitonListener.HammerItIn(id, amount);
+
                 break;
         }
     }

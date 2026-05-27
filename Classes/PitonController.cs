@@ -2,11 +2,13 @@
 
 using HarmonyLib;
 using System.Collections.Generic;
+using System.Linq;
 using UnityEngine;
+using UnityEngine.UIElements;
 
 public static class PitonController
 {
-    public static void SpawnItemPiton(Vector3 position, Vector3 direction, float buff, string id = "Item_Piton")
+    public static void SpawnItemPiton(Vector3 position, Vector3 direction, float buff, string id = "Item_Piton", int entityId = 0, bool owned = false)
     {
         var piton = CL_AssetManager.GetItemObjectPrefab(id).itemData.handItemAsset as HandItem_Piton;
 
@@ -19,14 +21,92 @@ public static class PitonController
         {
             handhold.HammerIn(buff);
         }
+
+        AddPitonListener(obj, entityId, owned);
     }
 
     public static void SendItemPiton(Vector3 position, Vector3 direction, float buff, string id = "Item_Piton")
     {
-        NetworkManager.SendPacket("itemPiton", position.x, position.y, position.z, direction.x, direction.y, direction.z, buff, id);
-        SpawnItemPiton(position, direction, buff, id);
+        var entityId = Random.RandomRangeInt(0, 1000000);
+        NetworkManager.SendPacket("itemPiton", position.x, position.y, position.z, direction.x, direction.y, direction.z, buff, id, entityId);
+        SpawnItemPiton(position, direction, buff, id, entityId, true);
+    }
+
+    public static void AddPitonListener(GameObject piton, int id, bool owned)
+    {
+        if (piton == null) return;
+
+        PitonListener.AddPiton(piton.AddComponent<PitonListener>(), id, owned);
     }
 }
+
+
+public class PitonListener : MonoBehaviour
+{
+    public static List<PitonListener> instances = [];
+
+    public int id;
+    public bool owned;
+
+    public static void CleanList()
+    {
+        foreach (var instance in instances.ToList())
+            if (instance == null)
+                instances.Remove(instance);
+    }
+
+    public static PitonListener GetPiton(int id)
+    {
+        foreach (var piton in instances)
+        {
+            if (piton.id == id)
+            {
+                return piton;
+            }
+        }
+
+        return null;
+    }
+
+    public static void AddPiton(PitonListener piton, int id, bool owned = false)
+    {
+        piton.id = id;
+        piton.owned = owned;
+        instances.Add(piton);
+    }
+
+    public static void HammerItIn(int id, float amount)
+    {
+        CleanList();
+
+        var p = GetPiton(id);
+        if (p != null)
+        {
+            p.GetComponent<CL_Handhold>().HammerIn(amount);
+        }
+    }
+
+    public void HammerIn(float amount)
+    {
+        NetworkManager.SendPacket("itemPitonHammerIn", id, amount);
+    }
+}
+
+[HarmonyPatch(typeof(CL_Handhold))]
+public static class HandholdPatch
+{
+    [HarmonyPatch(typeof(CL_Handhold), nameof(CL_Handhold.HammerIn))]
+    public static void Prefix(CL_Handhold __instance, float amount)
+    {
+        var pl = __instance.GetComponent<PitonListener>();
+
+        if (pl && pl.owned)
+        {
+            pl.HammerIn(amount);
+        }
+    }
+}
+
 
 [HarmonyPatch(typeof(HandItem_Piton))]
 public static class PitonPatch
@@ -78,5 +158,4 @@ public static class PitonPatch
 
         return false;
     }
-
 }
